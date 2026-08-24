@@ -1,0 +1,34 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Claude Usage",
+        "description": "Provide a claude.ai OAuth token to read your subscription's rolling usage limits.",
+        "data": {
+          "api_token": "OAuth token",
+          "scan_interval": "Polling interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the Anthropic API.",
+      "invalid_auth": "The token was rejected (401/403) — it is likely expired or invalid.",
+      "empty_token": "The token must not be empty."
+    },
+    "abort": {
+      "already_configured": "Claude Usage is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Claude Usage",
+        "description": "Adjust the polling interval or re-enter the token (leave blank to keep the current one).",
+        "data": {
+          "api_token": "OAuth token (blank = keep current)",
+          "scan_interval": "Polling interval (seconds)"
+        }
+      }
+    }
+  }
+}
