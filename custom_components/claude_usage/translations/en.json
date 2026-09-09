@@ -6,7 +6,21 @@
         "description": "Provide a claude.ai OAuth token to read your subscription's rolling usage limits.",
         "data": {
           "api_token": "OAuth token",
-          "scan_interval": "Polling interval (seconds)"
+          "scan_interval": "Polling interval"
+        },
+        "data_description": {
+          "api_token": "The claude.ai OAuth token is tried once before the entry is created and then used for every poll; it expires after a while, and Home Assistant asks for a new one.",
+          "scan_interval": "Seconds between two probe calls to the Anthropic API; default 300 seconds, allowed 60 to 3600."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Sign in again",
+        "description": "The stored OAuth token was rejected by the Anthropic API — it has most likely expired. Fetch a fresh token from claude.ai and enter it here.",
+        "data": {
+          "api_token": "OAuth token"
+        },
+        "data_description": {
+          "api_token": "The new claude.ai OAuth token; it is tried once before it replaces the stored one."
         }
       }
     },
@@ -16,17 +30,22 @@
       "empty_token": "The token must not be empty."
     },
     "abort": {
-      "already_configured": "Claude Usage is already configured."
+      "already_configured": "Claude Usage is already configured.",
+      "reauth_successful": "The new token works."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Claude Usage",
-        "description": "Adjust the polling interval or re-enter the token (leave blank to keep the current one).",
+        "description": "Adjust how often the usage limits are polled, or put a fresh OAuth token in place.",
         "data": {
-          "api_token": "OAuth token (blank = keep current)",
-          "scan_interval": "Polling interval (seconds)"
+          "api_token": "New OAuth token",
+          "scan_interval": "Polling interval"
+        },
+        "data_description": {
+          "api_token": "Replaces the stored token from now on; leave the field empty to keep the current one.",
+          "scan_interval": "Seconds between two probe calls to the Anthropic API; default 300 seconds, allowed 60 to 3600."
         }
       }
     }

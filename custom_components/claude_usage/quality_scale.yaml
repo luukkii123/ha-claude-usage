@@ -1,0 +1,75 @@
+# Integration Quality Scale — Stand 09.09.2026.
+# Mindestmaß laut docs/ui-regeln.md, Regel 3, ist Bronze. Hier steht der
+# ehrliche Stand jeder Bronze-Regel, nicht der gewünschte. `manifest.json`
+# führt bewusst KEINEN `quality_scale`-Schlüssel: der wäre eine Behauptung,
+# solange `config-flow-test-coverage` offen ist und die Integration noch nie
+# gegen ein echtes claude.ai-Konto gelaufen ist.
+rules:
+  action-setup:
+    status: exempt
+    comment: Die Integration registriert keine Aktionen.
+  appropriate-polling:
+    status: done
+    comment: >-
+      `DataUpdateCoordinator` mit Vorgabe 300 s (60–3600 einstellbar). Jede
+      Abfrage ist eine echte Anfrage gegen das Abo-Kontingent, deshalb ist die
+      Vorgabe bewusst grob und die Untergrenze bei 60 s festgenagelt.
+  brands: done
+  common-modules:
+    status: done
+    comment: >-
+      Coordinator in `coordinator.py`; eine gemeinsame Entitätsbasis gibt es
+      nicht, weil es nur eine Plattform mit einer einzigen Entitätsklasse gibt.
+  config-flow-test-coverage:
+    status: todo
+    comment: >-
+      Es gibt keine pytest-Abdeckung. Auf dem Entwicklungsrechner ist kein Home
+      Assistant installiert; geprüft wird bisher nur syntaktisch und über
+      hassfest.
+  config-flow: done
+  dependency-transparency:
+    status: done
+    comment: >-
+      `requirements` ist leer; der HTTP-Client kommt über
+      `homeassistant.helpers.httpx_client` von Home Assistant selbst.
+  docs-actions:
+    status: exempt
+    comment: Die Integration registriert keine Aktionen.
+  docs-high-level-description:
+    status: done
+    comment: README, Abschnitt „Wofür das gut ist".
+  docs-installation-instructions:
+    status: done
+    comment: README, Abschnitte „Installation über HACS", „Token beschaffen", „Einrichtung".
+  docs-removal-instructions:
+    status: done
+    comment: README, Abschnitt „Entfernen".
+  entity-event-setup:
+    status: exempt
+    comment: >-
+      Die Sensoren abonnieren nichts von sich aus; sie hängen ausschließlich am
+      Coordinator, der seine Listener selbst aufräumt.
+  entity-unique-id:
+    status: done
+    comment: "`sensor.py`: `_attr_unique_id = f\"{entry.entry_id}_{description.key}\"`."
+  has-entity-name:
+    status: done
+    comment: "`sensor.py`: `_attr_has_entity_name = True`."
+  runtime-data:
+    status: done
+    comment: "`entry.runtime_data` hält den Coordinator; `hass.data` wird nicht benutzt."
+  test-before-configure:
+    status: done
+    comment: >-
+      Der Config-Flow ruft `fetch_usage` mit dem eingegebenen Token auf und legt
+      den Eintrag erst nach einer erfolgreichen Antwort an. Der Reauth-Schritt
+      macht dasselbe, bevor er das alte Token ersetzt.
+  test-before-setup:
+    status: done
+    comment: "`async_setup_entry` ruft `async_config_entry_first_refresh()`."
+  unique-config-entry:
+    status: done
+    comment: >-
+      `async_set_unique_id(DOMAIN)` plus `_abort_if_unique_id_configured()`. Es
+      gibt genau ein claude.ai-Abo je Home Assistant; eine Konto-ID liefern die
+      Rate-Limit-Header nicht.

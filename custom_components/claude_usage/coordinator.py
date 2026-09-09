@@ -15,6 +15,7 @@ import httpx
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.httpx_client import get_async_client
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -167,7 +168,10 @@ class ClaudeUsageCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return await fetch_usage(self.hass, self._token)
         except InvalidTokenError as err:
             _LOGGER.warning("Claude Usage token rejected (likely expired): %s", err)
-            raise UpdateFailed(
-                "Token rejected (401/403) — it is likely expired. Re-enter it "
-                "via Settings → Devices & Services → Claude Usage → Configure."
+            # ConfigEntryAuthFailed, not UpdateFailed: this starts the reauth
+            # flow, so Home Assistant offers "Sign in again" instead of just
+            # marking the sensors unavailable.
+            raise ConfigEntryAuthFailed(
+                "Token rejected (401/403) — it is likely expired. Enter a new "
+                "one in the re-authentication dialog."
             ) from err

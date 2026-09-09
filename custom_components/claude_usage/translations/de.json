@@ -6,7 +6,21 @@
         "description": "Gib ein claude.ai-OAuth-Token ein, um die rollierenden Nutzungslimits deines Abos anzuzeigen.",
         "data": {
           "api_token": "OAuth-Token",
-          "scan_interval": "Abfrageintervall (Sekunden)"
+          "scan_interval": "Abfrageintervall"
+        },
+        "data_description": {
+          "api_token": "Das claude.ai-OAuth-Token wird einmal ausprobiert, bevor der Eintrag angelegt wird, und danach für jede Abfrage benutzt; es läuft nach einiger Zeit ab, dann fragt Home Assistant nach einem neuen.",
+          "scan_interval": "Sekunden zwischen zwei Testabfragen an die Anthropic-API; Vorgabe 300 Sekunden, erlaubt 60 bis 3600."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Erneut anmelden",
+        "description": "Die Anthropic-API hat das gespeicherte OAuth-Token abgelehnt — es ist höchstwahrscheinlich abgelaufen. Hol ein neues Token bei claude.ai und trage es hier ein.",
+        "data": {
+          "api_token": "OAuth-Token"
+        },
+        "data_description": {
+          "api_token": "Das neue claude.ai-OAuth-Token; es wird einmal ausprobiert, bevor es das gespeicherte ersetzt."
         }
       }
     },
@@ -16,17 +30,22 @@
       "empty_token": "Das Token darf nicht leer sein."
     },
     "abort": {
-      "already_configured": "Claude Usage ist bereits eingerichtet."
+      "already_configured": "Claude Usage ist bereits eingerichtet.",
+      "reauth_successful": "Das neue Token funktioniert."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Claude Usage",
-        "description": "Passe das Abfrageintervall an oder gib ein neues Token ein (leer lassen = aktuelles behalten).",
+        "description": "Stelle ein, wie oft die Nutzungslimits abgefragt werden, oder hinterlege ein frisches OAuth-Token.",
         "data": {
-          "api_token": "OAuth-Token (leer = aktuelles behalten)",
-          "scan_interval": "Abfrageintervall (Sekunden)"
+          "api_token": "Neues OAuth-Token",
+          "scan_interval": "Abfrageintervall"
+        },
+        "data_description": {
+          "api_token": "Ersetzt das gespeicherte Token ab sofort; leer lassen behält das bisherige.",
+          "scan_interval": "Sekunden zwischen zwei Testabfragen an die Anthropic-API; Vorgabe 300 Sekunden, erlaubt 60 bis 3600."
         }
       }
     }

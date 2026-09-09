@@ -1,7 +1,8 @@
-"""Config flow: claude.ai OAuth token and polling interval."""
+"""Config flow: claude.ai OAuth token, polling interval and reauth."""
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -33,6 +34,15 @@ STEP_USER_SCHEMA = vol.Schema(
         vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
             vol.Coerce(int), vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL)
         ),
+    }
+)
+
+
+STEP_REAUTH_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_API_TOKEN): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.PASSWORD)
+        )
     }
 )
 
@@ -70,6 +80,56 @@ class ClaudeUsageConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=self.add_suggested_values_to_schema(
                 STEP_USER_SCHEMA, user_input
             ),
+            errors=errors,
+        )
+
+    async def async_step_reauth(
+        self, entry_data: Mapping[str, Any]
+    ) -> ConfigFlowResult:
+        """The coordinator saw a 401/403 — Home Assistant asks for a new token.
+
+        There is no refresh token by design (see docs/stand.md, "claude_usage:
+        warum es beim OAuth-Token bleibt"). Reauth is the supported way to say
+        so out loud: HA shows "Reconfigure"/"Sign in again" in the sidebar
+        instead of letting the sensors rot as unavailable.
+        """
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Take a fresh token, probe it, then replace the stored one."""
+        entry = self._get_reauth_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            token = str(user_input.get(CONF_API_TOKEN, "")).strip()
+            if not token:
+                errors[CONF_API_TOKEN] = "empty_token"
+            else:
+                try:
+                    await fetch_usage(self.hass, token)
+                except InvalidTokenError:
+                    errors["base"] = "invalid_auth"
+                except UpdateFailed:
+                    errors["base"] = "cannot_connect"
+                else:
+                    # The token has to leave the options as well: the
+                    # coordinator reads `options[api_token] or data[api_token]`,
+                    # so a stale token in the options would beat the new one.
+                    return self.async_update_reload_and_abort(
+                        entry,
+                        data_updates={CONF_API_TOKEN: token},
+                        options={
+                            key: value
+                            for key, value in entry.options.items()
+                            if key != CONF_API_TOKEN
+                        },
+                    )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=STEP_REAUTH_SCHEMA,
             errors=errors,
         )
 

@@ -43,6 +43,15 @@ Manuell geht auch: den Ordner `custom_components/claude_usage` nach
 Voraussetzungen: Home Assistant **2024.11.0** oder neuer. Zusätzliche Pakete
 braucht die Integration nicht — der HTTP-Client kommt von Home Assistant selbst.
 
+Jedes Feld des Dialogs trägt seinen eigenen Hilfetext (deutsch und englisch, je
+nach Spracheinstellung von Home Assistant); die Tabelle unter „Einrichtung"
+wiederholt ihn in Kurzform.
+
+*English:* add this repository to HACS as a **custom repository** of category
+**Integration**, download *Claude Usage*, restart Home Assistant, then go to
+Settings → Devices & Services → **Add integration** → *Claude Usage*. Every
+field in the dialog carries its own helper text, so nothing has to be guessed.
+
 ## Token beschaffen
 
 Das Token entsteht beim Login in claude.ai bzw. Claude Code:
@@ -57,17 +66,35 @@ Repository und in keiner Datei, die man teilt.
 
 | Feld | Standard | Bedeutung |
 | --- | --- | --- |
-| OAuth-Token | — | das Token von oben; Pflichtfeld, wird verdeckt eingegeben |
-| Abfrageintervall | 300 s | wie oft abgefragt wird, 60–3600 |
+| OAuth-Token | — | das Token von oben; Pflichtfeld, wird verdeckt eingegeben und einmal ausprobiert, bevor der Eintrag entsteht |
+| Abfrageintervall | 300 s | Sekunden zwischen zwei Testabfragen an die Anthropic-API; erlaubt 60 bis 3600 |
 
 Beim Speichern macht die Integration sofort eine Probeabfrage. Wird das Token
 mit 401/403 abgelehnt, kommt „Token abgelehnt"; ist die API nicht erreichbar,
 „nicht erreichbar". Erst danach wird der Eintrag angelegt.
 
-Über **Konfigurieren** lassen sich Intervall und Token später ändern. Ein leer
-gelassenes Tokenfeld behält das bisherige Token.
+Über **Konfigurieren** lassen sich Intervall und Token später ändern:
+
+| Option | Standard | Wirkung |
+| --- | --- | --- |
+| Neues OAuth-Token | leer | ersetzt das gespeicherte Token ab sofort; leer lassen behält das bisherige |
+| Abfrageintervall | 300 s | Sekunden zwischen zwei Testabfragen an die Anthropic-API; erlaubt 60 bis 3600 |
 
 **Es ist nur ein Eintrag möglich.**
+
+### Wenn das Token abläuft
+
+Ein claude.ai-OAuth-Token ist kurzlebig. Antwortet die API mit 401 oder 403,
+startet die Integration die **erneute Anmeldung**: Home Assistant zeigt bei
+*Claude Usage* die Meldung „Erneut anmelden" mit einem Knopf, der ein einziges
+Feld öffnet — das neue Token. Es wird geprüft, bevor es das alte ersetzt, und
+zugleich aus den Optionen entfernt, damit kein altes Token aus einem früheren
+„Konfigurieren" gewinnt. Die Sensoren laufen danach weiter, ohne dass der
+Eintrag neu angelegt werden muss.
+
+Ein automatischer Refresh-Token ist bewusst **nicht** gebaut (siehe „Grenzen");
+die erneute Anmeldung ist der von Home Assistant vorgesehene Weg, das
+sichtbar zu machen, statt die Sensoren still `unavailable` werden zu lassen.
 
 ## Entitäten
 
@@ -110,10 +137,11 @@ den `anthropic-ratelimit-unified-*`-Headern.
 ## Grenzen
 
 - **Kein automatischer Token-Refresh.** Ein claude.ai-OAuth-Token ist kurzlebig.
-  Läuft es ab, antwortet die API mit 401, die Sensoren werden `unavailable` und
-  im Protokoll steht eine Warnung. Dann das Token unter *Einstellungen → Geräte
-  & Dienste → Claude Usage → Konfigurieren* neu eintragen. Das ist der
-  häufigste Zustand im Alltag und der größte offene Punkt dieser Integration.
+  Läuft es ab, antwortet die API mit 401 — seit 09.09.2026 wird daraus die
+  erneute Anmeldung (siehe „Wenn das Token abläuft"), nicht mehr ein stilles
+  `unavailable`. Ein neues Token einzutragen bleibt trotzdem Handarbeit; das ist
+  der häufigste Zustand im Alltag und der größte offene Punkt dieser
+  Integration.
 - **Die Abfrage zählt mit.** `max_tokens=1` auf Haiku ist praktisch nichts, aber
   eben nicht null: jede Abfrage ist eine Anfrage. Bei 300 s sind das rund 288
   am Tag. Ein kürzeres Intervall erhöht die Zahl entsprechend.
@@ -123,6 +151,26 @@ den `anthropic-ratelimit-unified-*`-Headern.
 - **Undokumentierte Header** — siehe oben. Ändert Anthropic etwas, hört diese
   Integration ohne Vorwarnung auf, Zahlen zu liefern.
 - **Ungetestet gegen ein echtes Konto** — siehe oben.
+
+## Entfernen
+
+1. Einstellungen → Geräte & Dienste → **Claude Usage** → ⋮ → **Löschen**. Damit
+   endet die Abfrage sofort, und die Sensoren verschwinden aus Home Assistant.
+   Das gespeicherte OAuth-Token wird mit dem Eintrag gelöscht.
+2. In HACS **Claude Usage** → ⋮ → **Entfernen**, danach Home Assistant neu
+   starten. Das löscht `custom_components/claude_usage`.
+
+**Was zurückbleibt:** nichts von der Integration selbst — kein Gerät, keine
+Entität, keine Datei außerhalb des Config-Entrys. Was im Verlauf (Recorder)
+und in den Langzeitstatistiken der Sensoren steht, bleibt bis zum nächsten
+Aufräumen des Recorders erhalten; wer es sofort los sein will, löscht es unter
+*Entwicklerwerkzeuge → Statistiken*. Das Token bei claude.ai selbst wird
+dadurch **nicht** widerrufen — dafür meldet man sich dort ab.
+
+*English:* delete the entry under Settings → Devices & Services (this removes
+the stored token and all sensors), then remove *Claude Usage* in HACS and
+restart. Nothing is left behind except recorder history and long-term
+statistics of the deleted sensors; the claude.ai token itself is not revoked.
 
 ## Lizenz
 
